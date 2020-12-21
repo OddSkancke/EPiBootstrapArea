@@ -37,6 +37,18 @@ namespace EPiBootstrapArea
             _fallbacks = displayOptions;
         }
 
+        internal bool ShouldRenderInnerContainer(HtmlHelper htmlHelper)
+        {
+            bool? nullable = (bool?)htmlHelper.ViewContext.ViewData["hasinnercontainer"];
+            return !nullable.HasValue || nullable.Value;
+        }
+
+        internal string GetInnerContainerHtmlTag(HtmlHelper htmlHelper)
+        {
+            string str = htmlHelper.ViewContext.ViewData["innercontainertag"] as string;
+            return !string.IsNullOrEmpty(str) ? str : "div";
+        }
+
         public override void Render(HtmlHelper htmlHelper, ContentArea contentArea)
         {
             if(contentArea == null || contentArea.IsEmpty)
@@ -53,25 +65,42 @@ namespace EPiBootstrapArea
 
             var viewContext = htmlHelper.ViewContext;
             TagBuilder tagBuilder = null;
+            TagBuilder innerContainer = null;
 
-            if(!IsInEditMode(htmlHelper) && ShouldRenderWrappingElement(htmlHelper))
+            if(!IsInEditMode(htmlHelper))
             {
-                tagBuilder = new TagBuilder(GetContentAreaHtmlTag(htmlHelper, contentArea));
-                AddNonEmptyCssClass(tagBuilder, viewContext.ViewData["cssclass"] as string);
-
-                if(ConfigurationContext.Current.AutoAddRow)
+                if (ShouldRenderWrappingElement(htmlHelper))
                 {
-                    AddNonEmptyCssClass(tagBuilder, "row");
+                    tagBuilder = new TagBuilder(GetContentAreaHtmlTag(htmlHelper, contentArea));
+                    AddNonEmptyCssClass(tagBuilder, viewContext.ViewData["cssclass"] as string);
+
+                    if(ConfigurationContext.Current.AutoAddRow)
+                    {
+                        AddNonEmptyCssClass(tagBuilder, "row");
+                    }
+
+                    viewContext.Writer.Write(tagBuilder.ToString(TagRenderMode.StartTag));
                 }
 
-                viewContext.Writer.Write(tagBuilder.ToString(TagRenderMode.StartTag));
+                if (ShouldRenderInnerContainer(htmlHelper))
+                {
+                    innerContainer = new TagBuilder(GetInnerContainerHtmlTag(htmlHelper));
+                    AddNonEmptyCssClass(innerContainer, viewContext.ViewData["innercontainercssclass"] as string);
+                    viewContext.Writer.Write(innerContainer.ToString(TagRenderMode.StartTag));
+                }
             }
+
 
             RenderContentAreaItems(htmlHelper, contentArea.FilteredItems);
 
             if(tagBuilder == null)
             {
                 return;
+            }
+
+            if (innerContainer != null)
+            {
+                viewContext.Writer.Write(innerContainer.ToString(TagRenderMode.EndTag));
             }
 
             viewContext.Writer.Write(tagBuilder.ToString(TagRenderMode.EndTag));
