@@ -93,17 +93,15 @@ namespace EPiBootstrapArea
 
             RenderContentAreaItems(htmlHelper, contentArea.FilteredItems);
 
-            if(tagBuilder == null)
+            if(tagBuilder != null)
             {
-                return;
+                viewContext.Writer.Write(tagBuilder.ToString(TagRenderMode.EndTag));
             }
 
             if (innerContainer != null)
             {
                 viewContext.Writer.Write(innerContainer.ToString(TagRenderMode.EndTag));
             }
-
-            viewContext.Writer.Write(tagBuilder.ToString(TagRenderMode.EndTag));
         }
 
         protected override void RenderContentAreaItems(HtmlHelper htmlHelper, IEnumerable<ContentAreaItem> contentAreaItems)
